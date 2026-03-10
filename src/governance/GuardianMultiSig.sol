@@ -24,15 +24,15 @@ contract GuardianMultisig {
         address[] memory _guardians,
         uint256 _threshold
     ) {
-        require(_threshold > 0);
-        require(_threshold <= _guardians.length);
+        require(_threshold > 0, "invalid threshold");
+        require(_threshold <= _guardians.length, "threshold too high");
 
-        for(uint i=0;i<_guardians.length;i++){
+        for (uint256 i = 0; i < _guardians.length; i++) {
 
             address g = _guardians[i];
 
-            require(!isGuardian[g]);
-            require(g != address(0));
+            require(g != address(0), "invalid guardian");
+            require(!isGuardian[g], "duplicate guardian");
 
             guardians.push(g);
             isGuardian[g] = true;
@@ -41,22 +41,18 @@ contract GuardianMultisig {
         threshold = _threshold;
     }
 
-    // modifier onlyGuardian(){
-    //     require(isGuardian[msg.sender], "not guardian");
-    //     _;
-    // }
-
-     modifier onlyGuardian() {
+    modifier onlyGuardian() {
         require(isGuardian[msg.sender], "not guardian");
         _;
     }
+
     function approveAction(bytes32 actionHash)
         external
         onlyGuardian
     {
         Approval storage a = approvals[actionHash];
 
-        require(!a.approved[msg.sender]);
+        require(!a.approved[msg.sender], "already approved");
 
         a.approved[msg.sender] = true;
         a.approvals++;
@@ -70,8 +66,8 @@ contract GuardianMultisig {
     {
         Approval storage a = approvals[actionHash];
 
-        require(!a.executed);
-        require(a.approvals >= threshold);
+        require(!a.executed, "already executed");
+        require(a.approvals >= threshold, "insufficient approvals");
 
         a.executed = true;
 

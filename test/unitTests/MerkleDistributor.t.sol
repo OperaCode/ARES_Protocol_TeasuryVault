@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.33;
 
-import "../utils/BaseTest.t.sol";
+import "../utility/BaseTest.t.sol";
 
 contract MerkleDistributorTest is BaseTest {
 
@@ -9,15 +9,12 @@ contract MerkleDistributorTest is BaseTest {
 
     function testValidMerkleClaim() public {
 
-        bytes32 leaf =
-            keccak256(
-                abi.encode(user, 1 ether)
-            );
+        bytes32 leaf = keccak256(abi.encode(user, 1 ether));
 
+        vm.prank(executor);
         distributor.updateRoot(leaf);
 
         vm.prank(user);
-
         distributor.claim(1 ether, proof);
 
         assertTrue(distributor.claimed(user));
@@ -25,15 +22,12 @@ contract MerkleDistributorTest is BaseTest {
 
     function testClaimUpdatesState() public {
 
-        bytes32 leaf =
-            keccak256(
-                abi.encode(user, 1 ether)
-            );
+        bytes32 leaf = keccak256(abi.encode(user, 1 ether));
 
+        vm.prank(executor);
         distributor.updateRoot(leaf);
 
         vm.prank(user);
-
         distributor.claim(1 ether, proof);
 
         assertTrue(distributor.claimed(user));
@@ -41,11 +35,9 @@ contract MerkleDistributorTest is BaseTest {
 
     function testDoubleClaimFails() public {
 
-        bytes32 leaf =
-            keccak256(
-                abi.encode(user, 1 ether)
-            );
+        bytes32 leaf = keccak256(abi.encode(user, 1 ether));
 
+        vm.prank(executor);
         distributor.updateRoot(leaf);
 
         vm.prank(user);

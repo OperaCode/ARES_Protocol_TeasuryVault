@@ -1,22 +1,40 @@
-// // SPDX-License-Identifier: MIT
-// pragma solidity ^0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.33;
 
-// import "../utils/BaseTest.t.sol";
+import "../utility/BaseTest.t.sol";
 
-// contract FullFlowTest is BaseTest {
+contract FullFlowTest is BaseTest {
 
-//     function testProposalLifecycle() public {
+    function testFullTreasuryExecutionFlow() public {
 
-//         vm.startPrank(admin);
+        vm.deal(address(vault), 10 ether);
 
-//         uint id = governor.createProposal(
-//             address(vault),
-//             1 ether,
-//             ""
-//         );
+        assertEq(address(vault).balance, 10 ether);
 
-//         vm.stopPrank();
+        bytes memory data = abi.encodeWithSignature(
+            "transferETH(address,uint256)",
+            user,
+            1 ether
+        );
 
-//         assertEq(id,1);
-//     }
-// }
+        bytes32 operationHash =
+            keccak256(abi.encode(address(vault), 0, data));
+
+        vm.prank(governor);
+        timelock.queue(operationHash);
+
+        (uint256 executeAfter, bool executed) =
+            timelock.operations(operationHash);
+
+        assertGt(executeAfter, block.timestamp);
+        assertFalse(executed);
+
+        vm.warp(block.timestamp + 1 hours);
+
+        vm.prank(governor);
+        timelock.execute(operationHash, address(vault), 0, data);
+
+        assertEq(user.balance, 11 ether);
+        assertEq(address(vault).balance, 9 ether);
+    }
+}

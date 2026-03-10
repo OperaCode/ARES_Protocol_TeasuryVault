@@ -1,22 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
-import "../../src/core/TreasuryVault.sol";
-import "../../src/core/TimeLockExecutor.sol";
-import "../../src/modules/MerkleDistributor.sol";
-import "../../src/auth/AuthorizationLayer.sol";
-import "../../src/governance/GuardianMultiSig.sol";
+import {TreasuryVault} from "../../src/core/TreasuryVault.sol";
+import {TimelockExecutor} from "../../src/core/TimeLockExecutor.sol";
+import {MerkleDistributor} from "../../src/modules/MerkleDistributor.sol";
+import {AuthorizationLayer} from "../../src/auth/AuthorizationLayer.sol";
+import {GuardianMultisig} from "../../src/governance/GuardianMultiSig.sol";
 
 contract BaseTest is Test {
 
     TreasuryVault vault;
-    TimeLockExecutor timelock;
+    TimelockExecutor timelock;
     MerkleDistributor distributor;
     AuthorizationLayer auth;
-    GuardianMultiSig multisig;
-
+    GuardianMultisig multisig;
     address governor = address(1);
     address guardian = address(2);
     address executor = address(3);
@@ -25,7 +24,7 @@ contract BaseTest is Test {
 
     function setUp() public virtual {
 
-        timelock = new TimeLockExecutor(governor);
+        timelock = new TimelockExecutor(governor);
 
         vault = new TreasuryVault(executor);
 
@@ -33,7 +32,11 @@ contract BaseTest is Test {
 
         auth = new AuthorizationLayer();
 
-        multisig = new GuardianMultiSig();
+        // multisig = new GuardianMultisig();
+            address[] memory guardians = new address[](1);
+        guardians[0] = guardian;
+        multisig = new GuardianMultisig(guardians, 1);
+        
 
         vm.deal(user, 10 ether);
         vm.deal(attacker, 10 ether);
