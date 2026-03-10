@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../libraries/OperationHash.sol";
-import "../interfaces/ITimelockExecutor.sol";
+
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {OperationHash} from "../libraries/OperationHash.sol";
+import {ITimelockExecutor} from "../interfaces/ITimelockExecutor.sol";
 
 contract TimelockExecutor is
     ITimelockExecutor,

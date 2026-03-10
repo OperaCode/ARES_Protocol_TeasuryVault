@@ -41,11 +41,15 @@ contract GuardianMultisig {
         threshold = _threshold;
     }
 
-    modifier onlyGuardian(){
+    // modifier onlyGuardian(){
+    //     require(isGuardian[msg.sender], "not guardian");
+    //     _;
+    // }
+
+     modifier onlyGuardian() {
         require(isGuardian[msg.sender], "not guardian");
         _;
     }
-
     function approveAction(bytes32 actionHash)
         external
         onlyGuardian

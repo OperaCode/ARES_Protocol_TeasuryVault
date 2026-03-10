@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "../libraries/EIP712Digest.sol";
-import "../libraries/OperationHash.sol";
-import "../interfaces/IAuthorizationLayer.sol";
+
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {EIP712Digest} from "../libraries/EIP712Digest.sol";
+import {OperationHash} from "../libraries/OperationHash.sol";
+import {IAuthorizationLayer} from "../interfaces/IAuthorizationLayer.sol";
 
 contract AuthorizationLayer is IAuthorizationLayer {
 
