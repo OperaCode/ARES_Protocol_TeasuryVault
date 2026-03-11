@@ -1,59 +1,52 @@
-// // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.33;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
+// import "../utility/BaseTest.t.sol";
 
-// import {BaseTest} from "../utility/BaseTest.t.sol";
+import {BaseTest} from "../utility/BaseTest.t.sol";
 
+contract GovernanceFlowTest is BaseTest {
 
+    function testFullGovernanceFlowExecutesTreasuryTransfer() public {
 
-// contract FullFlowTest is BaseTest {
+        // Arrange
+        vm.deal(address(vault), 5 ether);
 
-//     function testFullTreasuryExecutionFlow() public {
+        // allow timelock to control vault
+        vm.prank(executor);
+        vault.setExecutor(address(timelock));
 
-//         vm.deal(address(vault), 10 ether);
+        bytes memory data =
+            abi.encodeCall(
+                vault.transferETH,
+                (user, 1 ether)
+            );
 
-//         assertEq(address(vault).balance, 10 ether);
+        bytes32 opHash =
+            keccak256(
+                abi.encode(
+                    address(vault),
+                    0,
+                    data,
+                    timelock.nonce()
+                )
+            );
 
-//         bytes memory data =
-//             abi.encodeWithSignature(
-//                 "transferETH(address,uint256)",
-//                 user,
-//                 1 ether
-//             );
+        // Act — queue operation via governor
+        vm.prank(address(governor));
+        timelock.queue(opHash);
 
-//         bytes32 operationHash =
-//             keccak256(
-//                 abi.encode(
-//                     address(vault),
-//                     0,
-//                     data
-//                 )
-//             );
+        // wait for timelock delay
+        vm.warp(block.timestamp + 1 hours);
 
-//         // governor queues operation
-//         vm.prank(governor);
-//         timelock.queue(operationHash);
+        timelock.execute(
+            opHash,
+            address(vault),
+            0,
+            data
+        );
 
-//         (uint256 executeAfter, bool executed) =
-//             timelock.operations(operationHash);
-
-//         assertGt(executeAfter, block.timestamp);
-//         assertFalse(executed);
-
-//         // simulate timelock delay
-//         vm.warp(block.timestamp + 1 hours);
-
-//         // governor executes
-//         vm.prank(governor);
-//         timelock.execute(
-//             operationHash,
-//             address(vault),
-//             0,
-//             data
-//         );
-
-//         // verify transfer occurred
-//         assertEq(user.balance, 11 ether);
-//         assertEq(address(vault).balance, 9 ether);
-//     }
-// }
+        // Assert
+        assertEq(user.balance, 11 ether);
+    }
+}
