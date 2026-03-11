@@ -2,6 +2,7 @@
 pragma solidity ^0.8.33;
 
 import {BaseTest} from "../utility/BaseTest.t.sol";
+import {EIP712Digest} from "../../src/libraries/EIP712Digest.sol";
 
 contract AuthorizationLayerTest is BaseTest {
 
@@ -18,6 +19,7 @@ contract AuthorizationLayerTest is BaseTest {
 
         uint256 nonceBefore = auth.nonces(user);
 
+        // build struct hash exactly as contract does
         bytes32 structHash =
             keccak256(
                 abi.encode(
@@ -27,13 +29,11 @@ contract AuthorizationLayerTest is BaseTest {
                 )
             );
 
+        // use the same digest logic as the contract
         bytes32 digest =
-            keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    auth.domainSeparator(),
-                    structHash
-                )
+            EIP712Digest.digest(
+                auth.domainSeparator(),
+                structHash
             );
 
         (uint8 v, bytes32 r, bytes32 s) =
