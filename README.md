@@ -1,98 +1,253 @@
 # ARES Protocol Treasury System
 
-This is a secure, modular treasury system built from the ground up for the ARES Protocol. It handles large amounts of assets at about $500 million — while protecting against common DeFi pitfalls like governance hijacks, signature replays, flash loan tricks, and timelock skips. We use layered defenses and separate modules to keep the project safe, flexible and clean.
+A secure, modular treasury infrastructure designed to safely manage large protocol assets (~$500M+) while defending against common governance and DeFi attack vectors.
 
-## What's the Problem?
+The system separates **governance, authorization, execution, and payout modules** to enforce strong security boundaries and reduce the blast radius of failures.
 
-Old-school treasury setups are often full of holes. We've seen too many exploits in governance, approvals, delays, and payouts. ARES needed something custom that locks down the whole process: proposing actions, getting crypto approvals, waiting out delays, handling claims, and blocking attacks.
+---
 
-## The Project Approach
+# Overview
 
-We broke it down into five key parts:
+Modern DeFi treasury systems often fail due to weak governance controls, replayable approvals, flash-loan governance manipulation, or poorly designed vault architectures.
 
-1. **Proposal System**: Lets anyone suggest treasury moves (like sending funds or calling contracts), but holds them back from instant action.
-2. **Crypto Authorization**: Relies on EIP-712 signatures with built-in counters to stop replays, tied to the specific chain and contract.
-3. **Delayed Execution**: A queue system with required waits to fight off quick attacks and reentrancy.
-4. **Reward Payouts**: Uses Merkle trees for efficient claims to thousands of people, with checks to prevent double-dipping.
-5. **Governance Protections**: Timelocks and multisig stops for flash loans, big drains, and trolling.
+ARES Protocol introduces a **defense-in-depth treasury architecture** built around:
 
-## How it is Built
+- **EIP-712 signature authorization**
+- **Timelocked execution**
+- **Guardian multisig protection**
+- **Merkle-based reward distribution**
+- **Strict modular contract separation**
 
-The code is organized cleanly:
+This architecture ensures treasury actions must follow a secure lifecycle:
 
-```
+
+Proposal → Authorization → Timelock Queue → Delay → Execution
+
+
+This makes sudden governance attacks or malicious treasury drains significantly harder.
+
+---
+
+# Key Security Goals
+
+The system was designed to mitigate major exploit classes commonly seen in DeFi:
+
+| Threat | Defense |
+|------|------|
+| Governance takeover | Timelock delays + guardian controls |
+| Signature replay | EIP-712 + per-user nonces |
+| Flash-loan governance | Execution delay |
+| Merkle manipulation | Deterministic leaf hashing |
+| Double reward claims | Claim tracking |
+| Reentrancy attacks | Reentrancy protection |
+| Unauthorized treasury access | Role-restricted execution |
+
+---
+
+# System Architecture
+
+The protocol follows a modular architecture where each component performs a clearly defined role.
+
+
+```plaintext
 src/
 ├── core/
-│   ├── TreasuryVault.sol      # Holds funds and runs actions
-│   └── TimeLockExecutor.sol   # Manages delays and queues
+│ ├── TreasuryVault.sol
+│ └── TimelockExecutor.sol
+│
 ├── governance/
-│   ├── AresGovernor.sol       # Handles proposals
-│   └── GuardianMultiSig.sol  # Emergency overrides
+│ ├── AresGovernor.sol
+│ └── GuardianMultisig.sol
+│
 ├── auth/
-│   └── AuthorizationLayer.sol # Checks signatures
+│ └── AuthorizationLayer.sol
+│
 ├── modules/
-│   └── MerkleDistributor.sol  # Processes claims
-├── interfaces/                # Contract definitions
-├── libraries/                 # Helpers like EIP712 and hashing
+│ └── MerkleDistributor.sol
+│
+├── libraries/
+│ └── OperationHash.sol
+│
+├── interfaces/
+│
+test/
+├── unit/
+├── integration/
+└── exploit/
+``` 
+
+### Core Layer
+
+**TreasuryVault**
+
+- Stores treasury assets
+- Executes approved transfers or contract calls
+
+**TimelockExecutor**
+
+- Queues approved operations
+- Enforces minimum delay before execution
+
+---
+
+### Governance Layer
+
+**AresGovernor**
+
+- Manages proposal lifecycle
+- Integrates off-chain authorization
+
+**GuardianMultisig**
+
+- Emergency protection layer
+- Can block or override dangerous governance actions
+
+---
+
+### Authorization Layer
+
+**AuthorizationLayer**
+
+Implements EIP-712 typed signature verification.
+
+Features:
+
+- domain separation
+- per-user nonces
+- replay protection
+- signature validation
+
+---
+
+### Reward Distribution
+
+**MerkleDistributor**
+
+Gas-efficient reward distribution system supporting thousands of recipients.
+
+Features:
+
+- Merkle proof validation
+- claim tracking
+- double-claim protection
+
+---
+
+# Governance Flow
+
+Treasury actions follow a strict lifecycle:
+
+
+Proposal created
+
+Off-chain authorization signatures collected
+
+Operation queued in Timelock
+
+Delay period enforced
+
+Operation executed on TreasuryVault
+
+
+This layered process prevents instant governance attacks.
+
+---
+
+# Testing Strategy
+
+The project includes extensive testing to validate both **expected functionality and exploit resistance**.
+
+### Unit Tests
+
+- vault transfers
+- timelock behavior
+- multisig approvals
+- authorization verification
+- merkle claim validation
+
+### Exploit Simulation Tests
+
+Attack scenarios covered include:
+
+- reentrancy attacks
+- signature replay
+- premature timelock execution
+- double claim attacks
+- invalid authorization attempts
+- malicious receiver attacks
+
+Run the tests:
+
+```bash
+forge test
 ```
 
-Each piece stands alone but still retains parts of the general archetecture: core for execution, governance for ideas, auth for checks, modules for extras.
+Run exploit simulations:
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the deep dive .
+```bash
+forge test --match-contract Exploit
+```
 
-## Main Features
+---
 
-- **Full Lifecycle**: Propose → Approve → Queue → Wait → Execute
-- **No Replays**: Signatures with nonces block reuse anywhere
-- **Safe Delays**: At least 1 hour to stop flash attacks
-- **Merkle Claims**: Gas-friendly payouts for big groups
-- **Multisig Backup**: Team can cancel bad moves
-- **Thorough Testing**: Covers normal flows plus 8+ attack scenarios
+## Installation
 
-## Quick Start
+### Requirements
 
-### What You Need
-
-- Foundry (for Solidity ^0.8.20)
+- Foundry
 - Git
 
-### Setup
-
 ```bash
-git clone https://github.com/OperaCode/ARES_Protocol_TeasuryVault.git
-cd ARES_Protocol_TeasuryVault
+git clone https://github.com/OperaCode/ARES_Protocol_TreasuryVault.git
+cd ARES_Protocol_TreasuryVault
 forge install
-```
-
-### Build and Test
-
-```bash
 forge build
-forge test  # to run all tests: basic tests, exploits.
+forge test
 ```
 
+---
 
-## How to Use
+## Documentation
 
-1. **Propose**: Hit `AresGovernor.createProposal(target, value, data)` to suggest something.
-2. **Approve**: Sign off-chain with EIP-712, then call `authorizeAndQueue(proposalId, signature)`.
-3. **Queue It**: Goes into the timelock with a delay.
-4. **Execute**: Wait out the time, then `TimeLockExecutor.execute()` does the work.
-5. **Claim Rewards**: Prove your spot in the Merkle tree and call `MerkleDistributor.claim()`.
+Additional documentation:
 
-For the step-by-step rules, see [PROTOCOL.md](PROTOCOL.md).
+| File            | Description                                 |
+|-----------------|---------------------------------------------|
+| ARCHITECTURE.md | Full system architecture design             |
+| PROTOCOL.md     | Governance and execution lifecycle          |
+| SECURITY.md     | Security assumptions and mitigations        |
 
-## Security First
+### Security Philosophy
 
-The project guards against reentrancy, replays, double claims, bad executions, delay cheats, and griefing. Dive into [SECURITY.md](SECURITY.md) for the full breakdown, including fixes and what risks remain.
+ARES Protocol adopts a defense-in-depth design:
 
-## Testing
+no single module can drain the treasury
 
-- **Unit Testing(functional tests)**: Proposing, approving, queuing, executing, claiming.
-- **Exploit Attacks Tests**: Tests for reentrancy, replays, early runs, double claims, and more (8+ bad cases).
-- Run `forge test --match-contract Exploit` to see the defenses in action.
+governance decisions cannot execute instantly
+
+signatures cannot be replayed
+
+reward claims cannot be duplicated
+
+Every module enforces a different security boundary.
+
+### Future Improvements
+
+Potential upgrades include:
+
+cross-chain governance support
+
+batched proposal execution
+
+timelock parameter governance
+
+on-chain proposal voting
+
+### Author
+
+Raphael Faboyinde
 
 
-## License
+License
 
-MIT
+MIT License
