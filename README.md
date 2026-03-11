@@ -95,4 +95,4 @@ The project guards against reentrancy, replays, double claims, bad executions, d
 
 ## License
 
-MIT. This is our own build, not copied from others.
+MIT

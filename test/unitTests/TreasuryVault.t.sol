@@ -4,18 +4,17 @@ pragma solidity ^0.8.20;
 import "../utility/BaseTest.t.sol";
 
 contract TreasuryVaultTest is BaseTest {
-
+    
     function testVaultReceivesETH() public {
-
         vm.prank(user);
 
-        payable(address(vault)).transfer(1 ether);
+        (bool success, ) = payable(address(vault)).call{value: 1 ether}("");
+        require(success);
 
         assertEq(address(vault).balance, 1 ether);
     }
 
     function testOnlyExecutorCanTransfer() public {
-
         vm.expectRevert();
 
         vm.prank(user);
@@ -24,7 +23,6 @@ contract TreasuryVaultTest is BaseTest {
     }
 
     function testExecutorCanTransferETH() public {
-
         vm.deal(address(vault), 5 ether);
 
         vm.prank(executor);
@@ -35,7 +33,6 @@ contract TreasuryVaultTest is BaseTest {
     }
 
     function testCannotTransferMoreThanVaultBalance() public {
-
         vm.deal(address(vault), 1 ether);
 
         vm.expectRevert();

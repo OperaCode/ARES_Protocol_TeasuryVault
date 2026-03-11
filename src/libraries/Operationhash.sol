@@ -6,7 +6,7 @@ library OperationHash {
     function hashOperation(
         address target,
         uint256 value,
-        bytes calldata data,
+        bytes memory data,
         uint256 nonce,
         uint256 chainId
     )
