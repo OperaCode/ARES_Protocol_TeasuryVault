@@ -1,39 +1,95 @@
-Major Attack Surfaces
-1. Signature Replay and Forgery
-AuthorizationLayer accepts EIP-712 structured signatures to approve operations. Without controls, an attacker could reuse a valid signature to re-authorize a previously cancelled proposal, or replay an authorization from one chain on another deployment.
-Mitigation: AuthorizationLayer maintains a per-signer nonce registry. Each accepted signature increments the signer's nonce, making any reuse of the same signature invalid. Signatures are constructed via EIP712Digest.sol and bound to the chain ID and contract address, preventing cross-chain and cross-deployment replay. OperationHash.sol produces a deterministic identifier that ties signatures to specific proposal content, preventing signature substitution across proposals.
-Test coverage: exploit/ReplayAttack.t.sol, exploit/InvalidSignature.t.sol
-Remaining Risk: A bug in nonce increment ordering or a race condition in multicall scenarios could allow limited replay. Formal verification of the nonce logic in AuthorizationLayer is recommended.
+# Security Analysis
 
-2. Governance Manipulation via Flash Loans
-An attacker with flash-loan access to governance tokens could temporarily acquire enough voting weight in AresGovernor to pass a malicious proposal within a single block, before repaying the loan.
-Mitigation: TimelockExecutor enforces a mandatory delay between queueing and execution, meaning a proposal approved in a single block cannot be executed immediately. GuardianMultisig can cancel the queued operation during this window. Supplementary controls in AresGovernor — including minimum stake thresholds for proposal submission and proposal rate limits — further raise the cost of this attack.
-Test coverage: exploit/FlashLoanGovernance.t.sol
-Remaining Risk: If the delay configured in TimelockExecutor is too short (hours rather than days), a well-prepared attacker may execute before the community responds. A minimum delay of 48–72 hours is recommended for high-value operations.
+This document outlines the primary attack vectors against the ARES Protocol treasury system, their mitigations, test coverage, and residual risks. The system is designed with layered defenses to prevent unauthorized fund movement, but no system is infallible. All mitigations are implemented on-chain and tested via the exploit suite.
 
-3. Unauthorized and Premature Execution
-An attacker may attempt to trigger TreasuryVault execution by bypassing AuthorizationLayer, forging operation state, or exploiting a timing flaw in TimelockExecutor to execute before the delay has elapsed.
-Mitigation: TreasuryVault independently re-validates at execution time by checking that the operation has a valid record in AuthorizationLayer and that TimelockExecutor confirms the delay has elapsed. It does not trust the caller's assertion of readiness. The interfaces in ITreasuryVault.sol and ITimelockExecutor.sol enforce this validation boundary.
-Test coverage: exploit/UnauthorizedExecution.t.sol, exploit/PrematureExecution.t.sol
-Remaining Risk: A bug in TreasuryVault's re-validation logic could render upstream protections insufficient. Invariant checks should be embedded directly in the execution function, and the vault execution path requires comprehensive unit testing via unit/TreasuryVault.t.sol.
+## 1. Signature Replay and Forgery
 
-4. Proposal Replay
-A previously executed or cancelled proposal could be re-submitted and re-executed if the system does not track terminal proposal states.
-Mitigation: AresGovernor tracks all proposals by their OperationHash-derived ID and enforces terminal state checks — a proposal in EXECUTED or CANCELLED state cannot be re-queued. TimelockExecutor additionally enforces that each operation hash can only be enqueued once; re-enqueuing an existing hash reverts.
-Test coverage: exploit/ProposalReplay.t.sol
-Remaining Risk: If OperationHash.sol produces collisions across proposals with different parameters, distinct proposals could be conflated. The hash construction must include all proposal parameters in its preimage and should be reviewed for completeness.
+**Attack Vector**: AuthorizationLayer accepts EIP-712 signatures for operation approval. Without safeguards, an attacker could replay a valid signature to approve a different or repeated operation, or forge signatures across chains/deployments.
 
-5. Double-Claim in Merkle Reward Distribution
-A contributor could attempt to claim the same reward multiple times by submitting a valid Merkle proof to MerkleDistributor repeatedly.
-Mitigation: MerkleDistributor maintains a per-address claim registry. Before releasing funds, it checks this registry and reverts if the address has already claimed. The check and transfer occur atomically, preventing reentrancy-based double-claims.
-Test coverage: exploit/DoubleClaim.t.sol
-Remaining Risk: Edge cases around Merkle root updates — where a new root is published before all claims against the prior root are settled — must be handled carefully. The protocol should define an explicit root transition policy and consider locking claims during root updates.
+**Mitigation**:
+- Per-signer nonce registry: Each valid signature increments the nonce, invalidating future reuse.
+- EIP-712 binding: Signatures include chain ID and contract address, preventing cross-chain or cross-deployment replay.
+- Deterministic operation hashes: OperationHash.sol ties signatures to specific proposal parameters, preventing substitution.
 
-6. Reentrancy on Vault Execution
-TreasuryVault executes arbitrary external calls as part of approved treasury operations. A malicious target contract could re-enter the vault during execution to trigger a second operation before state is finalized.
-Mitigation: TreasuryVault applies a reentrancy guard on its execution function and follows the checks-effects-interactions pattern, updating operation state to EXECUTED before dispatching the external call.
-Test coverage: exploit/ReentrancyAttack.t.sol
-Remaining Risk: Any future modification to the vault that deviates from checks-effects-interactions ordering could reintroduce reentrancy. The reentrancy guard should be treated as a secondary safeguard, not a substitute for correct state ordering.
+**Test Coverage**: `exploit/ReplayAttack.t.sol`, `exploit/InvalidSignature.t.sol` – simulate nonce reuse and malformed signatures.
 
-Summary of Remaining Risks
-The primary residual risks are: key set compromise in AuthorizationLayer and GuardianMultisig (mitigated but not eliminated by the timelock), bugs in TreasuryVault re-validation logic, off-chain Merkle root integrity, and Merkle root transition race conditions. Recommended next steps are a formal audit of AuthorizationLayer and TreasuryVault, invariant fuzzing via integration/FullFlow.t.sol, and an independent review of the off-chain reward computation pipeline.
+**Remaining Risk**: Multicall race conditions or nonce ordering bugs could allow limited replay. Recommend formal verification of AuthorizationLayer nonce logic.
+
+## 2. Governance Manipulation via Flash Loans
+
+**Attack Vector**: An attacker borrows governance tokens via flash loan to temporarily gain voting power, approve a malicious proposal, and repay before execution.
+
+**Mitigation**:
+- Mandatory timelock delay: Proposals cannot execute immediately after approval.
+- GuardianMultisig cancellation: Guardians can cancel queued operations during the delay window.
+- Rate limits and stake thresholds in AresGovernor (if implemented) raise attack costs.
+
+**Test Coverage**: `exploit/FlashLoanGovernance.t.sol` – tests delay enforcement against rapid approvals.
+
+**Remaining Risk**: Short delays (e.g., 1 hour) allow execution before community response. Recommend 48-72 hour minimum for high-value operations.
+
+## 3. Unauthorized and Premature Execution
+
+**Attack Vector**: Bypassing AuthorizationLayer, forging queue state, or executing before timelock delay elapses to trigger TreasuryVault operations.
+
+**Mitigation**:
+- Independent re-validation: TreasuryVault checks AuthorizationLayer records and TimelockExecutor delay status at execution time.
+- Interface enforcement: ITreasuryVault.sol and ITimelockExecutor.sol define strict validation boundaries.
+- No trust in caller assertions.
+
+**Test Coverage**: `exploit/UnauthorizedExecution.t.sol`, `exploit/PrematureExecution.t.sol` – verify access control and delay checks.
+
+**Remaining Risk**: Bugs in re-validation could bypass protections. Embed invariants in execution functions and conduct comprehensive unit testing.
+
+## 4. Proposal Replay
+
+**Attack Vector**: Re-submitting executed or cancelled proposals if terminal states aren't enforced.
+
+**Mitigation**:
+- Terminal state tracking: AresGovernor prevents re-queuing executed/cancelled proposals.
+- Unique operation hashes: TimelockExecutor allows each hash to be queued only once.
+
+**Test Coverage**: `exploit/ProposalReplay.t.sol` – attempts to re-queue completed proposals.
+
+**Remaining Risk**: Hash collisions in OperationHash.sol could conflate proposals. Ensure all parameters are included in hash preimage.
+
+## 5. Double-Claim in Merkle Reward Distribution
+
+**Attack Vector**: Claiming the same reward multiple times via valid Merkle proofs.
+
+**Mitigation**:
+- Claim registry: MerkleDistributor tracks per-address claims and reverts duplicates.
+- Atomic checks: Registry update and transfer occur together, preventing reentrancy.
+
+**Test Coverage**: `exploit/DoubleClaim.t.sol` – tests registry enforcement.
+
+**Remaining Risk**: Merkle root updates during unsettled claims. Define transition policies and consider claim locking.
+
+## 6. Reentrancy on Vault Execution
+
+**Attack Vector**: Malicious targets re-entering TreasuryVault during execution to trigger additional operations.
+
+**Mitigation**:
+- Reentrancy guard: Applied to execution function.
+- Checks-effects-interactions: State updates before external calls.
+
+**Test Coverage**: `exploit/ReentrancyAttack.t.sol` – simulates reentrant calls.
+
+**Remaining Risk**: Future deviations from pattern could reintroduce issues. Treat guard as secondary defense.
+
+## Summary of Residual Risks
+
+Key ongoing risks include:
+- Compromise of signer keys in AuthorizationLayer/GuardianMultisig (timelock mitigates but doesn't eliminate).
+- Bugs in TreasuryVault re-validation.
+- Off-chain Merkle root integrity.
+- Race conditions in root transitions.
+
+**Recommendations**:
+- Formal audit of AuthorizationLayer and TreasuryVault.
+- Invariant fuzzing via `integration/FullFlow.t.sol`.
+- Independent review of reward computation pipeline.
+- Monitor for nonce-related edge cases in multicalls.
+
+This analysis is based on current implementation; updates may introduce new vectors. Always run full test suites before deployment.
+
