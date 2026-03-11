@@ -138,15 +138,15 @@ Features:
 Treasury actions follow a strict lifecycle:
 
 
-Proposal created
+- Proposal created
 
-Off-chain authorization signatures collected
+- Off-chain authorization signatures collected
 
-Operation queued in Timelock
+- Operation queued in Timelock
 
-Delay period enforced
+- Delay period enforced
 
-Operation executed on TreasuryVault
+- Operation executed on TreasuryVault
 
 
 This layered process prevents instant governance attacks.
@@ -221,27 +221,27 @@ Additional documentation:
 
 ARES Protocol adopts a defense-in-depth design:
 
-no single module can drain the treasury
+- no single module can drain the treasury
 
-governance decisions cannot execute instantly
+- governance decisions cannot execute instantly
 
-signatures cannot be replayed
+- signatures cannot be replayed
 
-reward claims cannot be duplicated
+- reward claims cannot be duplicated
 
-Every module enforces a different security boundary.
+- Every module enforces a different security boundary.
 
 ### Future Improvements
 
-Potential upgrades include:
+- - Potential upgrades include:
 
-cross-chain governance support
+- - cross-chain governance support
 
-batched proposal execution
+- - batched proposal execution
 
-timelock parameter governance
+- - timelock parameter governance
 
-on-chain proposal voting
+- - on-chain proposal voting
 
 ### Author
 
