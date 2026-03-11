@@ -1,61 +1,59 @@
-// // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
+import {BaseTest} from "../utility/BaseTest.t.sol";
 
-// import {BaseTest} from "../utility/BaseTest.t.sol";
+contract AuthorizationLayerTest is BaseTest {
 
-// contract AuthorizationLayerTest is BaseTest {
+    uint256 private userPrivateKey = 0xA11CE;
 
-//     uint256 private userPrivateKey = 0xA11CE;
+    function setUp() public override {
+        super.setUp();
+        user = vm.addr(userPrivateKey);
+    }
 
-//     function setUp() public override {
-//         super.setUp();
+    function testAuthorizationSuccessIncrementsNonce() public {
 
-//         user = vm.addr(userPrivateKey);
-//     }
+        bytes32 operationHash = keccak256("operation");
 
-//     function testNonceIncrementsAfterValidAuthorization() public {
+        uint256 nonceBefore = auth.nonces(user);
 
-//         bytes32 operationHash = keccak256("operation");
+        bytes32 structHash =
+            keccak256(
+                abi.encode(
+                    auth.AUTH_TYPEHASH(),
+                    operationHash,
+                    nonceBefore
+                )
+            );
 
-//         uint256 nonceBefore = auth.nonces(user);
+        bytes32 digest =
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    auth.DOMAIN_SEPARATOR(),
+                    structHash
+                )
+            );
 
-//         bytes32 structHash =
-//             keccak256(
-//                 abi.encode(
-//                     auth.AUTH_TYPEHASH(),
-//                     operationHash,
-//                     nonceBefore
-//                 )
-//             );
+        (uint8 v, bytes32 r, bytes32 s) =
+            vm.sign(userPrivateKey, digest);
 
-//         bytes32 digest =
-//             keccak256(
-//                 abi.encodePacked(
-//                     "\x19\x01",
-//                     auth.DOMAIN_SEPARATOR(),
-//                     structHash
-//                 )
-//             );
+        bytes memory signature =
+            abi.encodePacked(r, s, v);
 
-//         (uint8 v, bytes32 r, bytes32 s) =
-//             vm.sign(userPrivateKey, digest);
+        vm.prank(user);
 
-//         bytes memory signature =
-//             abi.encodePacked(r, s, v);
+        bool success =
+            auth.verifyAuthorization(
+                operationHash,
+                signature
+            );
 
-//         vm.prank(user);
+        assertTrue(success);
 
-//         bool success =
-//             auth.verifyAuthorization(
-//                 operationHash,
-//                 signature
-//             );
+        uint256 nonceAfter = auth.nonces(user);
 
-//         assertTrue(success);
-
-//         uint256 nonceAfter = auth.nonces(user);
-
-//         assertEq(nonceAfter, nonceBefore + 1);
-//     }
-// }
+        assertEq(nonceAfter, nonceBefore + 1);
+    }
+}

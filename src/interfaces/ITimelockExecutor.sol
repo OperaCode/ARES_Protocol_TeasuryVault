@@ -11,7 +11,7 @@ interface ITimelockExecutor {
         bytes32 operationHash,
         address target,
         uint256 value,
-        bytes calldata data
+        bytes memory data
     ) external;
 
 }

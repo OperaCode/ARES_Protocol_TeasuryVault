@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {OperationHash} from "../libraries/OperationHash.sol";
+// import {OperationHash} from "../libraries/OperationHash.sol";
 import {ITimelockExecutor} from "../interfaces/ITimelockExecutor.sol";
 
-contract TimelockExecutor is
-    ITimelockExecutor,
-    ReentrancyGuard
-{
-
+contract TimelockExecutor is ITimelockExecutor, ReentrancyGuard {
     struct Operation {
         uint256 executeAfter;
         bool executed;
@@ -26,67 +21,53 @@ contract TimelockExecutor is
     event OperationQueued(bytes32 opHash, uint256 executeAfter);
     event OperationExecuted(bytes32 opHash);
 
+    // modifier onlyGovernor() {
+    //     require(msg.sender == governor, "not governor");
+    //     _;
+    // }
+
     modifier onlyGovernor() {
-        require(msg.sender == governor, "not governor");
+        _onlyGovernor();
         _;
+    }
+
+    function _onlyGovernor() internal view {
+        require(msg.sender == governor, "not governor");
     }
 
     constructor(address _governor) {
         governor = _governor;
     }
 
-    function queue(
-        bytes32 operationHash
-    )
-        external
-        override
-        onlyGovernor
-    {
-        require(
-            operations[operationHash].executeAfter == 0,
-            "already queued"
-        );
+    function queue(bytes32 operationHash) external override onlyGovernor {
+        require(operations[operationHash].executeAfter == 0, "already queued");
 
-        uint256 executeAfter =
-            block.timestamp + DELAY;
+        uint256 executeAfter = block.timestamp + DELAY;
 
-        operations[operationHash] =
-            Operation({
-                executeAfter: executeAfter,
-                executed: false
-            });
+        operations[operationHash] = Operation({
+            executeAfter: executeAfter,
+            executed: false
+        });
 
-        emit OperationQueued(
-            operationHash,
-            executeAfter
-        );
+        emit OperationQueued(operationHash, executeAfter);
     }
 
     function execute(
         bytes32 operationHash,
         address target,
         uint256 value,
-        bytes calldata data
-    )
-        external
-        override
-        nonReentrant
-    {
-        Operation storage op =
-            operations[operationHash];
+        bytes memory data
+    ) external override nonReentrant {
+        Operation storage op = operations[operationHash];
 
         require(op.executeAfter != 0, "not queued");
         require(!op.executed, "already executed");
 
-        require(
-            block.timestamp >= op.executeAfter,
-            "timelock active"
-        );
+        require(block.timestamp >= op.executeAfter, "timelock active");
 
         op.executed = true;
 
-        (bool success,) =
-            target.call{value:value}(data);
+        (bool success, ) = target.call{value: value}(data);
 
         require(success, "execution failed");
 

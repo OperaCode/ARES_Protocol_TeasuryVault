@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "../interfaces/IMerkleDistributor.sol";
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+
+import {IMerkleDistributor} from "../interfaces/IMerkleDistributor.sol";
 
 contract MerkleDistributor is IMerkleDistributor {
     bytes32 public merkleRoot;
@@ -15,8 +16,12 @@ contract MerkleDistributor is IMerkleDistributor {
     event Claimed(address indexed user, uint256 amount);
 
     modifier onlyExecutor() {
-        require(msg.sender == executor, "not executor");
+        _onlyExecutor();
         _;
+    }
+
+    function _onlyExecutor() internal view {
+        require(msg.sender == executor, "not executor");
     }
 
     constructor(address _executor) {

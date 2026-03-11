@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../utility/BaseTest.t.sol";
+
+import {BaseTest} from "../utility/BaseTest.t.sol";
 
 contract TreasuryVaultTest is BaseTest {
 

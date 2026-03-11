@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 contract GuardianMultisig {
-
     address[] public guardians;
 
     mapping(address => bool) public isGuardian;
@@ -20,15 +19,11 @@ contract GuardianMultisig {
     event Approved(address guardian, bytes32 action);
     event Executed(bytes32 action);
 
-    constructor(
-        address[] memory _guardians,
-        uint256 _threshold
-    ) {
+    constructor(address[] memory _guardians, uint256 _threshold) {
         require(_threshold > 0, "invalid threshold");
         require(_threshold <= _guardians.length, "threshold too high");
 
         for (uint256 i = 0; i < _guardians.length; i++) {
-
             address g = _guardians[i];
 
             require(g != address(0), "invalid guardian");
@@ -41,15 +36,21 @@ contract GuardianMultisig {
         threshold = _threshold;
     }
 
+    // modifier onlyGuardian() {
+    //     require(isGuardian[msg.sender], "not guardian");
+    //     _;
+    // }
+
     modifier onlyGuardian() {
-        require(isGuardian[msg.sender], "not guardian");
+        _onlyGuardian();
         _;
     }
 
-    function approveAction(bytes32 actionHash)
-        external
-        onlyGuardian
-    {
+    function _onlyGuardian() internal view {
+        require(isGuardian[msg.sender], "not guardian");
+    }
+
+    function approveAction(bytes32 actionHash) external onlyGuardian {
         Approval storage a = approvals[actionHash];
 
         require(!a.approved[msg.sender], "already approved");
@@ -60,10 +61,7 @@ contract GuardianMultisig {
         emit Approved(msg.sender, actionHash);
     }
 
-    function executeAction(bytes32 actionHash)
-        external
-        onlyGuardian
-    {
+    function executeAction(bytes32 actionHash) external onlyGuardian {
         Approval storage a = approvals[actionHash];
 
         require(!a.executed, "already executed");
