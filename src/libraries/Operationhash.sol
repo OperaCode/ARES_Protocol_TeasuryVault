@@ -14,14 +14,24 @@ library OperationHash {
         pure
         returns (bytes32)
     {
-        return keccak256(
-            abi.encode(
-                target,
-                value,
-                keccak256(data),
-                nonce,
-                chainId
-            )
-        );
+        bytes32 dataHash = keccak256(data);
+        bytes32 result;
+
+        assembly {
+            let ptr := mload(0x40)
+
+            mstore(ptr, target)
+            mstore(add(ptr, 32), value)
+            mstore(add(ptr, 64), dataHash)
+            mstore(add(ptr, 96), nonce)
+            mstore(add(ptr, 128), chainId)
+
+            result := keccak256(ptr, 160)
+
+            // update free memory pointer
+            mstore(0x40, add(ptr, 160))
+        }
+
+        return result;
     }
 }

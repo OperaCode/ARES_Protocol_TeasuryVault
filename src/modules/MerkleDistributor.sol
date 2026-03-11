@@ -44,7 +44,16 @@ contract MerkleDistributor is IMerkleDistributor {
     function claim(uint256 amount, bytes32[] calldata proof) external override {
         require(!claimed[msg.sender], "already claimed");
 
-        bytes32 leaf = keccak256(abi.encode(msg.sender, amount));
+        bytes32 leaf;
+
+        assembly {
+            let ptr := mload(0x40)
+
+            mstore(ptr, caller())
+            mstore(add(ptr, 32), amount)
+
+            leaf := keccak256(ptr, 64)
+        }
 
         require(MerkleProof.verify(proof, merkleRoot, leaf), "invalid proof");
 

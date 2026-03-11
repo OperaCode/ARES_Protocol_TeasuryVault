@@ -25,7 +25,7 @@ contract GovernanceFlowTest is BaseTest {
 
         bytes memory data =
             abi.encodeCall(
-                vault.transferETH,
+                vault.transferEth,
                 (user, 1 ether)
             );
 

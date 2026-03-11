@@ -31,7 +31,7 @@ contract AuthorizationLayerTest is BaseTest {
             keccak256(
                 abi.encodePacked(
                     "\x19\x01",
-                    auth.DOMAIN_SEPARATOR(),
+                    auth.domainSeparator(),
                     structHash
                 )
             );

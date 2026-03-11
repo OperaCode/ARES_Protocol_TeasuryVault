@@ -32,7 +32,7 @@ contract TreasuryVault is ITreasuryVault {
         emit ExecutorUpdated(newExecutor);
     }
 
-    function transferETH(
+    function transferEth(
         address to,
         uint256 amount
     ) external override onlyExecutor {

@@ -15,7 +15,7 @@ contract TreasuryVaultTest is BaseTest {
 
         vm.expectRevert("Vault: unauthorized");
 
-        vault.transferETH(user, 1 ether);
+        vault.transferEth(user, 1 ether);
     }
 
 
@@ -30,7 +30,7 @@ contract TreasuryVaultTest is BaseTest {
 
         vm.expectRevert("insufficient balance");
 
-        vault.transferETH(user, 5 ether);
+        vault.transferEth(user, 5 ether);
 
         // ensure vault balance unchanged
         assertEq(address(vault).balance, 1 ether);

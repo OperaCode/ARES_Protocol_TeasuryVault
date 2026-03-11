@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 interface ITreasuryVault {
 
-    function transferETH(
+    function transferEth(
         address to,
         uint256 amount
     ) external;
