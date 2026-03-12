@@ -4,9 +4,9 @@
 
 The ARES Protocol treasury system is a modular framework for secure on-chain asset management. It enforces strict separation of concerns across five independent modules that covers: proposal management, cryptographic authorization, time-delayed execution, fund storage, and reward distribution. This prevents single points of failure and ensures layered validations for treasury actions.
 
-Managing $500M+ in assets, it distributes capital to contributors, LPs, and governance participants. Defenses include protections against governance takeovers, replay attacks, flash-loan manipulations, Merkle exploits, timelock bypasses, and multisig griefing. Sequential approvals through distinct contracts eliminate monolithic risks.
+Defenses include protections against governance takeovers, replay attacks, flash-loan manipulations, Merkle exploits, timelock bypasses, and multisig griefing. Sequential approvals through distinct contracts eliminate monolithic risks.
 
-The core innovation is the mandatory pipeline: proposals are created, authorized cryptographically, queued with delays, and executed after validations. This prevents immediate actions and detects malicious intents. Unlike existing protocols, all components are built from scratch, avoiding inherited vulnerabilities.
+The core innovation is the mandatory pipeline: proposals are created, authorized cryptographically, queued with delays, and executed after validations. This prevents immediate actions and detects malicious intents. 
 
 ## System Architecture
 
@@ -43,7 +43,7 @@ Each layer serves a specialized purpose and communicates through well-defined in
 - **Interfaces Layer**: Defines contract boundaries for modularity and testing.
 - **Libraries Layer**: Offers shared utilities for hashing and signature operations.
 
-The system uses more than five Solidity files, deliberately avoiding monolithic contract designs that could introduce complex interdependencies. All inter-contract communication is mediated through interfaces, ensuring modularity, upgradability, and simplified auditing.
+The system uses more than five Solidity files, deliberately avoiding monolithic contract designs that could introduce complex interdependencies. 
 
 ## Module Separation
 

@@ -1,7 +1,6 @@
 # Security Analysis
 
-This document outlines the primary attack vectors against the ARES Protocol treasury system, their mitigations, test coverage, and residual risks. The system is designed with layered defenses to prevent unauthorized fund movement, but no system is infallible. All mitigations are implemented on-chain and tested via the exploit suite.
-
+This document outlines the primary attack vectors against the ARES Protocol treasury system, their mitigations, test coverage, and residual risks. The system is designed with layered defenses to prevent unauthorized fund movement, but no system is infallible.
 ## 1. Signature Replay and Forgery
 
 **Attack Vector**: AuthorizationLayer accepts EIP-712 signatures for operation approval. Without safeguards, an attacker could replay a valid signature to approve a different or repeated operation, or forge signatures across chains/deployments.

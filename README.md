@@ -1,15 +1,5 @@
 # ARES Protocol Treasury System
 
-A secure, modular treasury infrastructure designed to safely manage large protocol assets (~$500M+) while defending against common governance and DeFi attack vectors.
-
-The system separates **governance, authorization, execution, and payout modules** to enforce strong security boundaries and reduce the blast radius of failures.
-
----
-
-# Overview
-
-Modern DeFi treasury systems often fail due to weak governance controls, replayable approvals, flash-loan governance manipulation, or poorly designed vault architectures.
-
 ARES Protocol introduces a **defense-in-depth treasury architecture** built around:
 
 - **EIP-712 signature authorization**
@@ -21,10 +11,17 @@ ARES Protocol introduces a **defense-in-depth treasury architecture** built arou
 This architecture ensures treasury actions must follow a secure lifecycle:
 
 
-Proposal → Authorization → Timelock Queue → Delay → Execution
+**Proposal → Authorization → Timelock Queue → Delay → Execution**
 
 
-This makes sudden governance attacks or malicious treasury drains significantly harder.
+The project uses secure, modular treasury infrastructure designed to safely manage large protocol assets (~$500M+) while defending against common governance and DeFi attack vectors. It separates **governance, authorization, execution, and payout modules** to enforce strong security boundaries and reduce the blast radius of failures.
+
+---
+
+# Overview
+
+Modern DeFi treasury systems often fail due to weak governance controls, replayable approvals, flash-loan governance manipulation, or poorly designed vault architectures.
+
 
 ---
 
@@ -33,7 +30,7 @@ This makes sudden governance attacks or malicious treasury drains significantly 
 The system was designed to mitigate major exploit classes commonly seen in DeFi:
 
 | Threat | Defense |
-|------|------|
+|--------|---------|
 | Governance takeover | Timelock delays + guardian controls |
 | Signature replay | EIP-712 + per-user nonces |
 | Flash-loan governance | Execution delay |
@@ -46,7 +43,7 @@ The system was designed to mitigate major exploit classes commonly seen in DeFi:
 
 # System Architecture
 
-The protocol follows a modular architecture where each component performs a clearly defined role.
+The protocol follows a modular architecture where each component performs a clearly defined role. This is specifically aimed to avoid Monolithic archetecture.
 
 
 ```plaintext
@@ -159,22 +156,27 @@ The project includes extensive testing to validate both **expected functionality
 
 ### Unit Tests
 
-- vault transfers
-- timelock behavior
-- multisig approvals
+- GuardianMultisigTest
+- Treasury Vault
+- Timelock behavior (executor)
+- Vault transfers
 - authorization verification
-- merkle claim validation
+
 
 ### Exploit Simulation Tests
 
 Attack scenarios covered include:
 
 - reentrancy attacks
-- signature replay
 - premature timelock execution
 - double claim attacks
-- invalid authorization attempts
-- malicious receiver attacks
+- proposal(signature) replay
+- invalid authorization (signature) attempts
+
+### Integration Test
+
+- Governance full flow
+
 
 Run the tests:
 
@@ -233,15 +235,15 @@ ARES Protocol adopts a defense-in-depth design:
 
 ### Future Improvements
 
-- - Potential upgrades include:
+ Potential upgrades include:
 
-- - cross-chain governance support
+- cross-chain governance support
 
-- - batched proposal execution
+- batched proposal execution
 
-- - timelock parameter governance
+- timelock parameter governance
 
-- - on-chain proposal voting
+- on-chain proposal voting
 
 ### Author
 
